@@ -164,6 +164,7 @@ void CvLuaTeam::PushMethods(lua_State* L, int t)
 	Method(IsAllowsOpenBordersToTeam);
 	Method(IsForcePeace);
 	Method(IsDefensivePact);
+	Method(IsAlliance);
 	Method(GetRouteChange);
 	Method(ChangeRouteChange);
 	Method(GetProjectCount);
@@ -1003,6 +1004,13 @@ int CvLuaTeam::lIsForcePeace(lua_State* L)
 int CvLuaTeam::lIsDefensivePact(lua_State* L)
 {
 	return BasicLuaMethod(L, &CvTeam::IsHasDefensivePact);
+}
+
+//------------------------------------------------------------------------------
+//bool isAlliance(TeamTypes eIndex);
+int CvLuaTeam::lIsAlliance(lua_State* L)
+{
+	return BasicLuaMethod(L, &CvTeam::IsHasAlliance);
 }
 
 //------------------------------------------------------------------------------

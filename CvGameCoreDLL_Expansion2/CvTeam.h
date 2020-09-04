@@ -281,6 +281,9 @@ public:
 	bool IsHasDefensivePact(TeamTypes eIndex) const;
 	void SetHasDefensivePact(TeamTypes eIndex, bool bNewValue);
 
+	bool IsHasAlliance(TeamTypes eIndex) const;
+	void SetHasAlliance(TeamTypes eIndex, bool bNewValue);
+
 	int GetTotalNumResearchAgreements() const;
 	bool IsHasResearchAgreement(TeamTypes eIndex) const;
 	void SetHasResearchAgreement(TeamTypes eIndex, bool bNewValue);
@@ -468,6 +471,7 @@ protected:
 	Firaxis::Array< bool, REALLY_MAX_TEAMS > m_abEmbassy;
 	Firaxis::Array< bool, REALLY_MAX_TEAMS > m_abOpenBorders;
 	Firaxis::Array< bool, REALLY_MAX_TEAMS > m_abDefensivePact;
+	Firaxis::Array< bool, REALLY_MAX_TEAMS > m_abAlliance;
 	Firaxis::Array< bool, REALLY_MAX_TEAMS > m_abResearchAgreement;
 	Firaxis::Array< bool, REALLY_MAX_TEAMS > m_abTradeAgreement;
 	Firaxis::Array< bool, REALLY_MAX_TEAMS > m_abForcePeace;

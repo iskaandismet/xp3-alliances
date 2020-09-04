@@ -10825,6 +10825,46 @@ void CvDiplomacyAI::DoSendStatementToPlayer(PlayerTypes ePlayer, DiploStatementT
 		}
 	}
 
+	// Offer Defensive Pact
+	else if(eStatement == DIPLO_STATEMENT_DEFENSIVE_PACT_OFFER)
+	{
+		// Active human
+		if(bShouldShowLeaderScene)
+		{
+			szText = GetDiploStringForMessage(DIPLO_MESSAGE_DEFENSIVE_PACT_OFFER);
+			CvDiplomacyRequests::SendDealRequest(GetPlayer()->GetID(), ePlayer, pDeal, DIPLO_UI_STATE_TRADE_AI_MAKES_OFFER, szText, LEADERHEAD_ANIM_REQUEST);
+		}
+		// Offer to an AI player
+		else if(!bHuman)
+		{
+			CvDeal kDeal = *pDeal;
+
+			// Don't need to call DoOffer because we check to see if the deal works for both sides BEFORE sending
+			GC.getGame().GetGameDeals()->AddProposedDeal(kDeal);
+			GC.getGame().GetGameDeals()->FinalizeDeal(GetPlayer()->GetID(), ePlayer, true);
+		}
+	}
+
+	// Offer Alliance
+	else if(eStatement == DIPLO_STATEMENT_ALLIANCE_OFFER)
+	{
+		// Active human
+		if(bShouldShowLeaderScene)
+		{
+			szText = GetDiploStringForMessage(DIPLO_MESSAGE_DEFENSIVE_PACT_OFFER);
+			CvDiplomacyRequests::SendDealRequest(GetPlayer()->GetID(), ePlayer, pDeal, DIPLO_UI_STATE_TRADE_AI_MAKES_OFFER, szText, LEADERHEAD_ANIM_REQUEST);
+		}
+		// Offer to an AI player
+		else if(!bHuman)
+		{
+			CvDeal kDeal = *pDeal;
+
+			// Don't need to call DoOffer because we check to see if the deal works for both sides BEFORE sending
+			GC.getGame().GetGameDeals()->AddProposedDeal(kDeal);
+			GC.getGame().GetGameDeals()->FinalizeDeal(GetPlayer()->GetID(), ePlayer, true);
+		}
+	}
+
 	// Offer to renew deal
 	else if(eStatement == DIPLO_STATEMENT_RENEW_DEAL)
 	{
@@ -11674,6 +11714,8 @@ void CvDiplomacyAI::DoContactPlayer(PlayerTypes ePlayer)
 		DoOpenBordersExchange(ePlayer, eStatement, pDeal);
 		DoOpenBordersOffer(ePlayer, eStatement, pDeal);
 		DoResearchAgreementOffer(ePlayer, eStatement, pDeal);
+		DoDefensivePactOffer(ePlayer, eStatement, pDeal);
+		DoAllianceOffer(ePlayer, eStatement, pDeal);
 		DoRenewExpiredDeal(ePlayer, eStatement, pDeal);
 		DoShareIntrigueStatement(ePlayer, eStatement);
 		//DoResearchAgreementPlan(ePlayer, eStatement);
@@ -13565,6 +13607,57 @@ void CvDiplomacyAI::DoEmbassyOffer(PlayerTypes ePlayer, DiploStatementTypes& eSt
 	}
 }
 
+/// Possible Contact Statement - Open Borders
+void CvDiplomacyAI::DoOpenBordersOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal)
+{
+	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+
+	if(eStatement == NO_DIPLO_STATEMENT_TYPE)
+	{
+		if(GetPlayer()->GetDealAI()->IsMakeOfferForOpenBorders(ePlayer, /*pDeal can be modified in this function*/ pDeal))
+		{
+			DiploStatementTypes eTempStatement = DIPLO_STATEMENT_OPEN_BORDERS_OFFER;
+			int iTurnsBetweenStatements = 20;
+
+			if(GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
+				eStatement = eTempStatement;
+		}
+		else
+		{
+			// Clear out the deal if we don't want to offer it so that it's not tainted for the next trade possibility we look at
+			pDeal->ClearItems();
+		}
+	}
+}
+
+/// Possible Contact Statement - Research Agreement Offer
+void CvDiplomacyAI::DoResearchAgreementOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal)
+{
+	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+
+	if(eStatement == NO_DIPLO_STATEMENT_TYPE)
+	{
+		if(IsCanMakeResearchAgreementRightNow(ePlayer))
+		{
+			if(GetPlayer()->GetDealAI()->IsMakeOfferForResearchAgreement(ePlayer, /*pDeal can be modified in this function*/ pDeal))
+			{
+				DiploStatementTypes eTempStatement = DIPLO_STATEMENT_RESEARCH_AGREEMENT_OFFER;
+				int iTurnsBetweenStatements = 20;
+
+				if(GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
+					eStatement = eTempStatement;
+			}
+			else
+			{
+				// Clear out the deal if we don't want to offer it so that it's not tainted for the next trade possibility we look at
+				pDeal->ClearItems();
+			}
+		}
+	}
+}
+
 /// Possible Contact Statement - Open Borders Exchange
 void CvDiplomacyAI::DoOpenBordersExchange(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal)
 {
@@ -13620,52 +13713,155 @@ void CvDiplomacyAI::DoOpenBordersExchange(PlayerTypes ePlayer, DiploStatementTyp
 	}
 }
 
-/// Possible Contact Statement - Open Borders
-void CvDiplomacyAI::DoOpenBordersOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal)
+/// Possible Contact Statement - Defensive Pact Offer
+void CvDiplomacyAI::DoDefensivePactOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal)
 {
-	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
-	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+	MajorCivApproachTypes eApproach = GetMajorCivApproach(ePlayer, /*bHideTrueFeelings*/ false);
+	int iScaryModifier = 2; //How much more powerful another civ must be before this civ starts seeking Defensive Pacts
 
-	if(eStatement == NO_DIPLO_STATEMENT_TYPE)
+	//Check if deal is possible
+	if(pDeal->IsPossibleToTradeItem(GetPlayer()->GetID(), ePlayer, TRADE_ITEM_DEFENSIVE_PACT) &&
+		        pDeal->IsPossibleToTradeItem(ePlayer, GetPlayer()->GetID(), TRADE_ITEM_DEFENSIVE_PACT))
 	{
-		if(GetPlayer()->GetDealAI()->IsMakeOfferForOpenBorders(ePlayer, /*pDeal can be modified in this function*/ pDeal))
+		bool IsPactPossible = true;
+
+		// If player is planning War, always say no
+		if(eApproach == MAJOR_CIV_APPROACH_WAR)
+			IsPactPossible = false;
+		// If player is Hostile, always say no
+		else if(eApproach == MAJOR_CIV_APPROACH_HOSTILE)
+			IsPactPossible = false;
+
+		MajorCivOpinionTypes eOpinion = GetMajorCivOpinion(ePlayer);
+
+		// If player is unforgivable, always say no
+		if(eOpinion == MAJOR_CIV_OPINION_UNFORGIVABLE)
+			IsPactPossible = false;
+		// If player is an enemy, always say no
+		else if (eOpinion == MAJOR_CIV_OPINION_ENEMY)
+			IsPactPossible = false;
+
+		int iSelfMilitaryStrength = GET_TEAM(GetTeam()).getDefensivePower();
+		PlayerTypes eScaryPlayer = NO_PLAYER;
+		int iOtherMilitaryStrength;
+
+		// Loop through all players to see if somebody is scary enough to encourage a defensive pact with someone else
+		PlayerTypes eTargetPlayerLoop;
+		for(int iTargetPlayerLoop = 0; iTargetPlayerLoop < MAX_MAJOR_CIVS; iTargetPlayerLoop++)
 		{
-			DiploStatementTypes eTempStatement = DIPLO_STATEMENT_OPEN_BORDERS_OFFER;
+			eTargetPlayerLoop = (PlayerTypes) iTargetPlayerLoop;
+
+			// Player must be valid
+			if(!IsPlayerValid(eTargetPlayerLoop))
+				continue;
+
+			// Don't test player Target himself
+			if(eTargetPlayerLoop == ePlayer)
+				continue;
+
+			// Is this player our friend?
+			if(GetMajorCivOpinion(ePlayer) == MAJOR_CIV_OPINION_ALLY)
+				continue;
+			if(GetMajorCivOpinion(ePlayer) == MAJOR_CIV_OPINION_FRIEND)
+				continue;
+			if(GetMajorCivOpinion(ePlayer) == MAJOR_CIV_OPINION_FAVORABLE)
+				continue;
+
+			iOtherMilitaryStrength = (GET_TEAM(GET_PLAYER(ePlayer).getTeam())).getDefensivePower();
+
+			if(iOtherMilitaryStrength > (iSelfMilitaryStrength * iScaryModifier))
+			{
+				eScaryPlayer = eTargetPlayerLoop;
+			}
+		}
+
+		// Found someone?
+		if((eScaryPlayer != NO_PLAYER) && (IsPactPossible))
+		{
+			DiploStatementTypes eTempStatement = DIPLO_STATEMENT_DEFENSIVE_PACT_OFFER;
 			int iTurnsBetweenStatements = 20;
 
 			if(GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
-				eStatement = eTempStatement;
-		}
-		else
-		{
-			// Clear out the deal if we don't want to offer it so that it's not tainted for the next trade possibility we look at
-			pDeal->ClearItems();
+			{
+				bool bSendStatement = false;
+
+				// AI
+				if(!GET_PLAYER(ePlayer).isHuman())
+				{
+					bSendStatement = true;
+				}
+				// Human
+				else
+					bSendStatement = true;
+
+				// 1 in 2 chance we don't actually send the message (don't want full predictability)
+				if(50 < GC.getGame().getJonRandNum(100, "Diplomacy AI: rand roll to see if we ask to enter into defensive pact"))
+					bSendStatement = false;
+
+				if(bSendStatement)
+				{
+					// Defensive Pact on each side
+					pDeal->AddDefensivePact(GetPlayer()->GetID(), 20);
+					pDeal->AddDefensivePact(ePlayer, 20);
+
+					eStatement = eTempStatement;
+				}
+				// Add this statement to the log so we don't evaluate it again until 20 turns has come back around
+				else
+					DoAddNewStatementToDiploLog(ePlayer, eTempStatement);
+			}
 		}
 	}
 }
 
-/// Possible Contact Statement - Research Agreement Offer
-void CvDiplomacyAI::DoResearchAgreementOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal)
+/// Possible Contact Statement - Alliance Offer
+void CvDiplomacyAI::DoAllianceOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal)
 {
 	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
 	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
 
 	if(eStatement == NO_DIPLO_STATEMENT_TYPE)
 	{
-		if(IsCanMakeResearchAgreementRightNow(ePlayer))
+		//Check if deal is possible
+		if(pDeal->IsPossibleToTradeItem(GetPlayer()->GetID(), ePlayer, TRADE_ITEM_ALLIANCE) &&
+		        pDeal->IsPossibleToTradeItem(ePlayer, GetPlayer()->GetID(), TRADE_ITEM_ALLIANCE))
 		{
-			if(GetPlayer()->GetDealAI()->IsMakeOfferForResearchAgreement(ePlayer, /*pDeal can be modified in this function*/ pDeal))
-			{
-				DiploStatementTypes eTempStatement = DIPLO_STATEMENT_RESEARCH_AGREEMENT_OFFER;
-				int iTurnsBetweenStatements = 20;
+			//If so, no bells and whistles, go for it
+			DiploStatementTypes eTempStatement = DIPLO_STATEMENT_ALLIANCE_OFFER;
+			int iTurnsBetweenStatements = 20;
 
-				if(GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
-					eStatement = eTempStatement;
-			}
-			else
+			if(GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
 			{
-				// Clear out the deal if we don't want to offer it so that it's not tainted for the next trade possibility we look at
-				pDeal->ClearItems();
+				eStatement = eTempStatement;
+
+				bool bSendStatement = false;
+
+				// AI
+				if(!GET_PLAYER(ePlayer).isHuman())
+				{
+					if(GET_PLAYER(ePlayer).GetDiplomacyAI()->IsOpenBordersExchangeAcceptable(GetPlayer()->GetID()))
+						bSendStatement = true;
+				}
+				// Human
+				else
+					bSendStatement = true;
+
+				// 1 in 2 chance we don't actually send the message (don't want full predictability)
+				if(50 < GC.getGame().getJonRandNum(100, "Diplomacy AI: rand roll to see if we ask to enter alliance"))
+					bSendStatement = false;
+
+				if(bSendStatement)
+				{
+					// Alliance on each side
+					pDeal->AddAlliance(GetPlayer()->GetID(), 20);
+					pDeal->AddAlliance(ePlayer, 20);
+
+					eStatement = eTempStatement;
+				}
+				// Add this statement to the log so we don't evaluate it again until 20 turns has come back around
+				else
+					DoAddNewStatementToDiploLog(ePlayer, eTempStatement);
+
 			}
 		}
 	}
@@ -13851,8 +14047,8 @@ void CvDiplomacyAI::DoRequest(PlayerTypes ePlayer, DiploStatementTypes& eStateme
 		DiploStatementTypes eTempStatement = DIPLO_STATEMENT_REQUEST;
 
 		// If a request was accepted or rejected, wait 60 turns. If we rolled for rand and failed, wait 15 turns before we try again
-		if(GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= 60 &&
-		        GetNumTurnsSinceStatementSent(ePlayer, DIPLO_STATEMENT_REQUEST_RANDFAILED) >= 15)
+		if(GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= 30 &&
+		        GetNumTurnsSinceStatementSent(ePlayer, DIPLO_STATEMENT_REQUEST_RANDFAILED) >= 5)
 		{
 			bool bRandPassed;	// This is used to see if we WOULD have made a request, but the rand roll failed (so add an entry to the log)
 			bool bMakeRequest = IsMakeRequest(ePlayer, pDeal, bRandPassed);
@@ -13911,74 +14107,74 @@ void CvDiplomacyAI::DoGift(PlayerTypes ePlayer, DiploStatementTypes& eStatement,
 }
 
 /// Possible Contact Statement
-//void CvDiplomacyAI::DoNowUnforgivableStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement)
-//{
-//	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
-//	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
-//
-//	if (eStatement == NO_DIPLO_STATEMENT_TYPE)
-//	{
-//		bool bSendStatement = false;
-//
-//		// Unforgivable!
-//		if (GetMajorCivOpinion(ePlayer) == MAJOR_CIV_OPINION_UNFORGIVABLE)
-//		{
-//			// Our approach (real or fake) can't be Friendly
-//			if (GetMajorCivApproach(ePlayer, /*bHideTrueFeelings*/ true) != MAJOR_CIV_APPROACH_FRIENDLY)
-//			{
-//				bSendStatement = true;
-//			}
-//		}
-//
-//		if (bSendStatement)
-//		{
-//			DiploStatementTypes eTempStatement = DIPLO_STATEMENT_NOW_UNFORGIVABLE;
-//			int iTurnsBetweenStatements = MAX_TURNS_SAFE_ESTIMATE;
-//
-//			if (GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
-//			{
-//				eStatement = eTempStatement;
-//			}
-//		}
-//	}
-//}
+void CvDiplomacyAI::DoNowUnforgivableStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement)
+{
+	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+
+	if (eStatement == NO_DIPLO_STATEMENT_TYPE)
+	{
+		bool bSendStatement = false;
+
+		// Unforgivable!
+		if (GetMajorCivOpinion(ePlayer) == MAJOR_CIV_OPINION_UNFORGIVABLE)
+		{
+			// Our approach (real or fake) can't be Friendly
+			if (GetMajorCivApproach(ePlayer, /*bHideTrueFeelings*/ true) != MAJOR_CIV_APPROACH_FRIENDLY)
+			{
+				bSendStatement = true;
+			}
+		}
+
+		if (bSendStatement)
+		{
+			DiploStatementTypes eTempStatement = DIPLO_STATEMENT_NOW_UNFORGIVABLE;
+			int iTurnsBetweenStatements = MAX_TURNS_SAFE_ESTIMATE;
+
+			if (GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
+			{
+				eStatement = eTempStatement;
+			}
+		}
+	}
+}
 
 /// Possible Contact Statement
-//void CvDiplomacyAI::DoNowEnemyStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement)
-//{
-//	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
-//	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
-//
-//	if (eStatement == NO_DIPLO_STATEMENT_TYPE)
-//	{
-//		bool bSendStatement = false;
-//
-//		// Don't show this message if we've already given a more severe one
-//		if (m_paDiploLogStatementTurnCountScratchPad[DIPLO_STATEMENT_NOW_UNFORGIVABLE] == MAX_TURNS_SAFE_ESTIMATE)
-//		{
-//			// An enemy
-//			if (GetMajorCivOpinion(ePlayer) == MAJOR_CIV_OPINION_ENEMY)
-//			{
-//				// Our approach (real or fake) can't be Friendly
-//				if (GetMajorCivApproach(ePlayer, /*bHideTrueFeelings*/ true) != MAJOR_CIV_APPROACH_FRIENDLY)
-//				{
-//					bSendStatement = true;
-//				}
-//			}
-//
-//			if (bSendStatement)
-//			{
-//				DiploStatementTypes eTempStatement = DIPLO_STATEMENT_NOW_ENEMY;
-//				int iTurnsBetweenStatements = MAX_TURNS_SAFE_ESTIMATE;
-//
-//				if (GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
-//				{
-//					eStatement = eTempStatement;
-//				}
-//			}
-//		}
-//	}
-//}
+void CvDiplomacyAI::DoNowEnemyStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement)
+{
+	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+
+	if (eStatement == NO_DIPLO_STATEMENT_TYPE)
+	{
+		bool bSendStatement = false;
+
+		// Don't show this message if we've already given a more severe one
+		if (m_paDiploLogStatementTurnCountScratchPad[DIPLO_STATEMENT_NOW_UNFORGIVABLE] == MAX_TURNS_SAFE_ESTIMATE)
+		{
+			// An enemy
+			if (GetMajorCivOpinion(ePlayer) == MAJOR_CIV_OPINION_ENEMY)
+			{
+				// Our approach (real or fake) can't be Friendly
+				if (GetMajorCivApproach(ePlayer, /*bHideTrueFeelings*/ true) != MAJOR_CIV_APPROACH_FRIENDLY)
+				{
+					bSendStatement = true;
+				}
+			}
+
+			if (bSendStatement)
+			{
+				DiploStatementTypes eTempStatement = DIPLO_STATEMENT_NOW_ENEMY;
+				int iTurnsBetweenStatements = MAX_TURNS_SAFE_ESTIMATE;
+
+				if (GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
+				{
+					eStatement = eTempStatement;
+				}
+			}
+		}
+	}
+}
 
 /// Possible Contact Statement
 void CvDiplomacyAI::DoHostileStatement(PlayerTypes ePlayer, DiploStatementTypes& eStatement)
@@ -14013,27 +14209,27 @@ void CvDiplomacyAI::DoHostileStatement(PlayerTypes ePlayer, DiploStatementTypes&
 }
 
 /// Possible Contact Statement
-//void CvDiplomacyAI::DoFriendlyStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement)
-//{
-//	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
-//	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
-//
-//	MajorCivApproachTypes eApproach = GetMajorCivApproach(ePlayer, /*bHideTrueFeelings*/ true);
-//
-//	if (eStatement == NO_DIPLO_STATEMENT_TYPE)
-//	{
-//		if (eApproach == MAJOR_CIV_APPROACH_FRIENDLY)
-//		{
-//			DiploStatementTypes eTempStatement = DIPLO_STATEMENT_COMPLIMENT;
-//			int iTurnsBetweenStatements = 35;
-//
-//			if (GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
-//			{
-//				eStatement = eTempStatement;
-//			}
-//		}
-//	}
-//}
+void CvDiplomacyAI::DoFriendlyStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement)
+{
+	CvAssertMsg(ePlayer >= 0, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+	CvAssertMsg(ePlayer < MAX_MAJOR_CIVS, "DIPLOMACY_AI: Invalid Player Index.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+
+	MajorCivApproachTypes eApproach = GetMajorCivApproach(ePlayer, /*bHideTrueFeelings*/ true);
+
+	if (eStatement == NO_DIPLO_STATEMENT_TYPE)
+	{
+		if (eApproach == MAJOR_CIV_APPROACH_FRIENDLY)
+		{
+			DiploStatementTypes eTempStatement = DIPLO_STATEMENT_COMPLIMENT;
+			int iTurnsBetweenStatements = 35;
+
+			if (GetNumTurnsSinceStatementSent(ePlayer, eTempStatement) >= iTurnsBetweenStatements)
+			{
+				eStatement = eTempStatement;
+			}
+		}
+	}
+}
 
 /// Possible Contact Statement
 void CvDiplomacyAI::DoAfraidStatement(PlayerTypes ePlayer, DiploStatementTypes& eStatement)
@@ -15410,6 +15606,16 @@ const char* CvDiplomacyAI::GetDiploStringForMessage(DiploMessageTypes eDiploMess
 		// AI wants RA with player
 	case DIPLO_MESSAGE_RESEARCH_AGREEMENT_OFFER:
 		strText = GetDiploTextFromTag("RESPONSE_RESEARCH_AGREEMENT_OFFER");
+		break;
+
+		// AI wants DP with player
+	case DIPLO_MESSAGE_DEFENSIVE_PACT_OFFER:
+		strText = GetDiploTextFromTag("RESPONSE_DEFENSIVE_PACT_OFFER");
+		break;
+
+		// AI wants alliance with player
+	case DIPLO_MESSAGE_ALLIANCE_OFFER:
+		strText = GetDiploTextFromTag("RESPONSE_ALLIANCE_OFFER");
 		break;
 
 	case DIPLO_MESSAGE_RENEW_DEAL:

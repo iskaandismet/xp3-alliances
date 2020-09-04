@@ -731,6 +731,7 @@ int CvLuaEnums::pRegister(lua_State* L)
 	RegisterEnum(TRADE_ITEM_UNITS);
 	RegisterEnum(TRADE_ITEM_OPEN_BORDERS);
 	RegisterEnum(TRADE_ITEM_DEFENSIVE_PACT);
+	RegisterEnum(TRADE_ITEM_ALLIANCE);
 	RegisterEnum(TRADE_ITEM_RESEARCH_AGREEMENT);
 	RegisterEnum(TRADE_ITEM_TRADE_AGREEMENT);
 	RegisterEnum(TRADE_ITEM_PERMANENT_ALLIANCE);

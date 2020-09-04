@@ -549,6 +549,33 @@ bool CvDeal::IsPossibleToTradeItem(PlayerTypes ePlayer, PlayerTypes eToPlayer, T
 				return false;
 		}
 	}
+	// Alliance
+	else if(eItem == TRADE_ITEM_ALLIANCE)
+	{
+		// Embassy has not been established
+		if(!pFromTeam->HasEmbassyAtTeam(eToTeam) || !pToTeam->HasEmbassyAtTeam(eFromTeam))
+			return false;
+		// Already has DP
+		if(pFromTeam->IsHasAlliance(eToTeam))
+			return false;
+		// Same Team
+		if(eFromTeam == eToTeam)
+			return false;
+
+		// DoF has not been made with this player
+		if (!this->IsPeaceTreatyTrade(eToPlayer) && !this->IsPeaceTreatyTrade(ePlayer))
+		{
+			if (pFromPlayer->getTeam() != pToPlayer->getTeam() && (!pFromPlayer->GetDiplomacyAI()->IsDoFAccepted(eToPlayer) || !pToPlayer->GetDiplomacyAI()->IsDoFAccepted(ePlayer)))
+				return false;
+		}
+
+		// Check to see if the other player can trade this item to us as well.  If we can't, we can't trade it either
+		if(bCheckOtherPlayerValidity)
+		{
+			if(!IsPossibleToTradeItem(eToPlayer, ePlayer, eItem, iData1, iData2, iData3, bFlag1, /*bCheckOtherPlayerValidity*/ false))
+				return false;
+		}
+	}
 	// Research Agreement
 	else if(eItem == TRADE_ITEM_RESEARCH_AGREEMENT)
 	{
@@ -1114,6 +1141,29 @@ void CvDeal::AddDefensivePact(PlayerTypes eFrom, int iDuration)
 	}
 }
 
+/// Insert a defensive pact
+void CvDeal::AddAlliance(PlayerTypes eFrom, int iDuration)
+{
+	CvAssertMsg(iDuration >= 0, "DEAL: Trying to add a negative duration to a TradeItem.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+	CvAssertMsg(iDuration < GC.getGame().getEstimateEndTurn() * 2, "DEAL: Trade item has a crazy long duration (probably invalid).  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+	CvAssertMsg(eFrom == m_eFromPlayer || eFrom == m_eToPlayer, "DEAL: Adding deal item for a player that's not actually in this deal!  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+
+	if(IsPossibleToTradeItem(eFrom, GetOtherPlayer(eFrom), TRADE_ITEM_ALLIANCE, iDuration))
+	{
+		CvTradedItem item;
+		item.m_eItemType = TRADE_ITEM_ALLIANCE;
+		item.m_iDuration = iDuration;
+		//item.m_iFinalTurn = iDuration + GC.getGame().getGameTurn();
+		item.m_iFinalTurn = -1;
+		item.m_eFromPlayer = eFrom;
+		m_TradedItems.push_back(item);
+	}
+	else
+	{
+		CvAssertMsg(false, "DEAL: Trying to add an invalid Defensive Pact item to a deal");
+	}
+}
+
 /// Insert a Research Agreement
 void CvDeal::AddResearchAgreement(PlayerTypes eFrom, int iDuration)
 {
@@ -1517,6 +1567,19 @@ bool CvDeal::IsDefensivePactTrade(PlayerTypes eFrom)
 	return 0;
 }
 
+bool CvDeal::IsAllianceTrade(PlayerTypes eFrom)
+{
+	TradedItemList::iterator it;
+	for(it = m_TradedItems.begin(); it != m_TradedItems.end(); ++it)
+	{
+		if(it->m_eItemType == TRADE_ITEM_ALLIANCE && it->m_eFromPlayer == eFrom)
+		{
+			return true;
+		}
+	}
+	return 0;
+}
+
 bool CvDeal::IsResearchAgreementTrade(PlayerTypes eFrom)
 {
 	TradedItemList::iterator it;
@@ -1618,6 +1681,7 @@ CvDeal::DealRenewStatus CvDeal::GetItemTradeableState(TradeableItems eTradeItem)
 	case TRADE_ITEM_RESOURCES:
 	case TRADE_ITEM_OPEN_BORDERS:
 	case TRADE_ITEM_DEFENSIVE_PACT:
+	case TRADE_ITEM_ALLIANCE:
 	case TRADE_ITEM_THIRD_PARTY_EMBARGO: // dead!
 		return DEAL_RENEWABLE;
 		break;
@@ -2219,6 +2283,11 @@ bool CvGameDeals::FinalizeDeal(PlayerTypes eFromPlayer, PlayerTypes eToPlayer, b
 				{
 					GET_TEAM(eFromTeam).SetHasDefensivePact(eToTeam, true);
 				}
+				// Alliance
+				else if(it->m_eItemType == TRADE_ITEM_ALLIANCE)
+				{
+					GET_TEAM(eFromTeam).SetHasAlliance(eToTeam, true);
+				}
 				// Research Agreement
 				else if(it->m_eItemType == TRADE_ITEM_RESEARCH_AGREEMENT)
 				{
@@ -2800,6 +2869,41 @@ void CvGameDeals::DoEndTradedItem(CvTradedItem* pItem, PlayerTypes eToPlayer, bo
 			strSummary = GetLocalizedText("TXT_KEY_NOTIFICATION_SUMMARY_DEAL_EXPIRED_DEFENSIVE_PACT_TO_US", fromPlayer.getNameKey());
 			pNotifications->Add(NOTIFICATION_DEAL_EXPIRED_DEFENSIVE_PACT, strBuffer, strSummary, -1, -1, -1);
 		}
+	}
+	// Alliance
+	else if(pItem->m_eItemType == TRADE_ITEM_ALLIANCE)
+	{
+		pNotifications = fromPlayer.GetNotifications();
+		if(pNotifications)
+		{
+			strBuffer = GetLocalizedText("TXT_KEY_NOTIFICATION_DEAL_EXPIRED_ALLIANCE_FROM_US", toPlayer.getNameKey());
+			strSummary = GetLocalizedText("TXT_KEY_NOTIFICATION_SUMMARY_DEAL_EXPIRED_ALLIANCE_FROM_US", toPlayer.getNameKey());
+			pNotifications->Add(NOTIFICATION_DEAL_EXPIRED_DEFENSIVE_PACT, strBuffer, strSummary, -1, -1, -1);
+		}
+
+		pNotifications = toPlayer.GetNotifications();
+		if(pNotifications)
+		{
+			strBuffer = GetLocalizedText("TXT_KEY_NOTIFICATION_DEAL_EXPIRED_ALLIANCE_FROM_US", fromPlayer.getNameKey());
+			strSummary = GetLocalizedText("TXT_KEY_NOTIFICATION_SUMMARY_DEAL_EXPIRED_ALLIANCE_FROM_US", fromPlayer.getNameKey());
+			pNotifications->Add(NOTIFICATION_DEAL_EXPIRED_DEFENSIVE_PACT, strBuffer, strSummary, -1, -1, -1);
+		}
+
+		ICvEngineScriptSystem1* pkScriptSystem = gDLL->GetScriptSystem();
+		if (pkScriptSystem) 
+		{
+			CvLuaArgsHandle args;
+			args->Push(eFromTeam);
+			args->Push(eToTeam);
+
+			bool bResult = false;
+			LuaSupport::CallHook(pkScriptSystem, "AllianceEnded", args.get(), bResult);
+		}
+
+		GET_TEAM(eToTeam).setPermanentWarPeace(eFromTeam, false);
+		GET_TEAM(eFromTeam).setPermanentWarPeace(eToTeam, false);
+		GET_TEAM(eToTeam).SetAllowsOpenBordersToTeam(eFromTeam, false);
+		GET_TEAM(eFromTeam).SetAllowsOpenBordersToTeam(eToTeam, false);
 	}
 	// Research Agreement
 	else if(pItem->m_eItemType == TRADE_ITEM_RESEARCH_AGREEMENT)

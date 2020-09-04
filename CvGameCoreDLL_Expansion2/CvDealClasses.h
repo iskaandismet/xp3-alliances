@@ -23,6 +23,7 @@ enum TradeableItems
     TRADE_ITEM_UNITS,
     TRADE_ITEM_OPEN_BORDERS,
     TRADE_ITEM_DEFENSIVE_PACT,
+    TRADE_ITEM_ALLIANCE,
     TRADE_ITEM_RESEARCH_AGREEMENT,
     TRADE_ITEM_TRADE_AGREEMENT, // not in use
     TRADE_ITEM_PERMANENT_ALLIANCE,
@@ -174,6 +175,7 @@ public:
 	void AddAllowEmbassy(PlayerTypes eFrom);
 	void AddOpenBorders(PlayerTypes eFrom, int iDuration);
 	void AddDefensivePact(PlayerTypes eFrom, int iDuration);
+	void AddAlliance(PlayerTypes eFrom, int iDuration);
 	void AddResearchAgreement(PlayerTypes eFrom, int iDuration);
 	void AddTradeAgreement(PlayerTypes eFrom, int iDuration);
 	void AddPermamentAlliance();
@@ -202,6 +204,7 @@ public:
 	bool IsAllowEmbassyTrade(PlayerTypes eFrom);
 	bool IsOpenBordersTrade(PlayerTypes eFrom);
 	bool IsDefensivePactTrade(PlayerTypes eFrom);
+	bool IsAllianceTrade(PlayerTypes eFrom);
 	bool IsResearchAgreementTrade(PlayerTypes eFrom);
 	bool IsTradeAgreementTrade(PlayerTypes eFrom);
 	bool IsPeaceTreatyTrade(PlayerTypes eFrom);

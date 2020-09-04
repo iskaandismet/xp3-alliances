@@ -202,6 +202,7 @@ void CvTeam::uninit()
 		m_abEmbassy[i] = false;
 		m_abOpenBorders[i] = false;
 		m_abDefensivePact[i] = false;
+		m_abAlliance[i] = false;
 		m_abResearchAgreement[i] = false;
 		m_abTradeAgreement[i] = false;
 		m_abForcePeace[i] = false;
@@ -3935,7 +3936,7 @@ void CvTeam::SetHasDefensivePact(TeamTypes eIndex, bool bNewValue)
 	CvAssertMsg(eIndex >= 0, "eIndex is expected to be non-negative (invalid Index)");
 	CvAssertMsg(eIndex < MAX_TEAMS, "eIndex is expected to be within maximum bounds (invalid Index)");
 
-	if(IsHasDefensivePact(eIndex) != bNewValue)
+	if((IsHasDefensivePact(eIndex) != bNewValue) && (!IsHasAlliance(eIndex)))
 	{
 		m_abDefensivePact[eIndex] = bNewValue;
 
@@ -3949,6 +3950,85 @@ void CvTeam::SetHasDefensivePact(TeamTypes eIndex, bool bNewValue)
 			CvString strBuffer = GetLocalizedText("TXT_KEY_MISC_PLAYERS_SIGN_DEFENSIVE_PACT", getName().GetCString(), GET_TEAM(eIndex).getName().GetCString());
 			GC.getGame().addReplayMessage(REPLAY_MESSAGE_MAJOR_EVENT, getLeaderID(), strBuffer, -1, -1);
 		}
+
+		if(bNewValue && !GET_TEAM(eIndex).IsHasAlliance(GetID()))
+		{
+			ICvEngineScriptSystem1* pkScriptSystem = gDLL->GetScriptSystem();
+			if (pkScriptSystem) 
+			{
+				CvLuaArgsHandle args;
+				args->Push(GetID());
+				args->Push(eIndex);
+				args->Push(bNewValue);
+
+				bool bResult = false;
+				LuaSupport::CallHook(pkScriptSystem, "SetHasDefensivePact", args.get(), bResult);
+			}
+		}
+	}
+}
+
+
+
+//	--------------------------------------------------------------------------------
+bool CvTeam::IsHasAlliance(TeamTypes eIndex) const
+{
+	CvAssertMsg(eIndex >= 0, "eIndex is expected to be non-negative (invalid Index)");
+	CvAssertMsg(eIndex < MAX_TEAMS, "eIndex is expected to be within maximum bounds (invalid Index)");
+	return m_abAlliance[eIndex];
+}
+
+
+//	--------------------------------------------------------------------------------
+void CvTeam::SetHasAlliance(TeamTypes eIndex, bool bNewValue)
+{
+	CvAssertMsg(eIndex >= 0, "eIndex is expected to be non-negative (invalid Index)");
+	CvAssertMsg(eIndex < MAX_TEAMS, "eIndex is expected to be within maximum bounds (invalid Index)");
+
+	if(IsHasAlliance(eIndex) != bNewValue)
+	{
+		m_abAlliance[eIndex] = bNewValue;
+
+		if((GetID() == GC.getGame().getActiveTeam()) || (eIndex == GC.getGame().getActiveTeam()))
+		{
+			DLLUI->setDirty(Score_DIRTY_BIT, true);
+		}
+
+		if(bNewValue && !GET_TEAM(eIndex).IsHasAlliance(GetID()))
+		{
+			CvString strBuffer = GetLocalizedText("TXT_KEY_MISC_PLAYERS_SIGN_ALLIANCE", getName().GetCString(), GET_TEAM(eIndex).getName().GetCString());
+			GC.getGame().addReplayMessage(REPLAY_MESSAGE_MAJOR_EVENT, getLeaderID(), strBuffer, -1, -1);
+
+			if(IsAllowsOpenBordersToTeam(eIndex) != bNewValue)
+			{
+				m_abOpenBorders[eIndex] = bNewValue;
+
+				GC.getMap().verifyUnitValidPlot();
+
+				if((GetID() == GC.getGame().getActiveTeam()) || (eIndex == GC.getGame().getActiveTeam()))
+				{
+					DLLUI->setDirty(Score_DIRTY_BIT, true);
+				}
+			}
+		}
+
+		if(bNewValue && !GET_TEAM(eIndex).IsHasAlliance(GetID()))
+		{
+			ICvEngineScriptSystem1* pkScriptSystem = gDLL->GetScriptSystem();
+			if (pkScriptSystem) 
+			{
+				CvLuaArgsHandle args;
+				args->Push(GetID());
+				args->Push(eIndex);
+				args->Push(bNewValue);
+
+				bool bResult = false;
+				LuaSupport::CallHook(pkScriptSystem, "SetHasAlliance", args.get(), bResult);
+			}
+		}
+		
+		GET_TEAM(GetID()).setPermanentWarPeace(eIndex, true);
+		GET_TEAM(eIndex).setPermanentWarPeace(GetID(), true);
 	}
 }
 
@@ -6897,6 +6977,9 @@ void CvTeam::Read(FDataStream& kStream)
 	ArrayWrapper<bool> kDefensivePactWrapper(MAX_TEAMS, &m_abDefensivePact[0]);
 	kStream >> kDefensivePactWrapper;
 
+	ArrayWrapper<bool> kAllianceWrapper(MAX_TEAMS, &m_abAlliance[0]);
+	kStream >> kAllianceWrapper;
+
 	ArrayWrapper<bool> kResearchAgreementWrapper(MAX_TEAMS, &m_abResearchAgreement[0]);
 	kStream >> kResearchAgreementWrapper;
 
@@ -7042,6 +7125,7 @@ void CvTeam::Write(FDataStream& kStream) const
 	kStream << ArrayWrapperConst<bool>(MAX_TEAMS, &m_abEmbassy[0]);
 	kStream << ArrayWrapperConst<bool>(MAX_TEAMS, &m_abOpenBorders[0]);
 	kStream << ArrayWrapperConst<bool>(MAX_TEAMS, &m_abDefensivePact[0]);
+	kStream << ArrayWrapperConst<bool>(MAX_TEAMS, &m_abAlliance[0]);
 	kStream << ArrayWrapperConst<bool>(MAX_TEAMS, &m_abResearchAgreement[0]);
 	kStream << ArrayWrapperConst<bool>(MAX_TEAMS, &m_abTradeAgreement[0]);
 	kStream << ArrayWrapperConst<bool>(MAX_TEAMS, &m_abForcePeace[0]);

@@ -442,6 +442,7 @@ DemandResponseTypes CvDealAI::DoHumanDemand(CvDeal* pDeal)
 
 				case TRADE_ITEM_CITIES:
 				case TRADE_ITEM_DEFENSIVE_PACT:
+				case TRADE_ITEM_ALLIANCE:
 				case TRADE_ITEM_RESEARCH_AGREEMENT:
 				case TRADE_ITEM_PERMANENT_ALLIANCE:
 				case TRADE_ITEM_THIRD_PARTY_PEACE:
@@ -851,6 +852,8 @@ int CvDealAI::GetTradeItemValue(TradeableItems eItem, bool bFromMe, PlayerTypes 
 		iItemValue = GetOpenBordersValue(bFromMe, eOtherPlayer, bUseEvenValue);
 	else if(eItem == TRADE_ITEM_DEFENSIVE_PACT)
 		iItemValue = GetDefensivePactValue(bFromMe, eOtherPlayer, bUseEvenValue);
+	else if(eItem == TRADE_ITEM_ALLIANCE)
+		iItemValue = GetAllianceValue(bFromMe, eOtherPlayer, bUseEvenValue);
 	else if(eItem == TRADE_ITEM_RESEARCH_AGREEMENT)
 		iItemValue = GetResearchAgreementValue(bFromMe, eOtherPlayer, bUseEvenValue);
 	else if(eItem == TRADE_ITEM_TRADE_AGREEMENT)
@@ -1689,35 +1692,35 @@ int CvDealAI::GetDefensivePactValue(bool bFromMe, PlayerTypes eOtherPlayer, bool
 	if(!bFromMe)
 	{
 		iItemValue = 100;
-		//	// How strong are they compared to us?
-		//	switch (GetPlayer()->GetDiplomacyAI()->GetPlayerMilitaryStrengthComparedToUs(eOtherPlayer))
-		//	{
-		//	case STRENGTH_PATHETIC:
-		//		iItemValue = 10;
-		//		break;
-		//	case STRENGTH_WEAK:
-		//		iItemValue = 40;
-		//		break;
-		//	case STRENGTH_POOR:
-		//		iItemValue = 70;
-		//		break;
-		//	case STRENGTH_AVERAGE:
-		//		iItemValue = 100;
-		//		break;
-		//	case STRENGTH_STRONG:
-		//		iItemValue = 130;
-		//		break;
-		//	case STRENGTH_POWERFUL:
-		//		iItemValue = 150;
-		//		break;
-		//	case STRENGTH_IMMENSE:
-		//		iItemValue = 200;
-		//		break;
-		//	default:
-		//		CvAssertMsg(false, "DEAL_AI: AI player has no valid MilitaryStrengthComparedToUs for Defensive Pact valuation.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.")
-		//		iItemValue = 100;
-		//		break;
-		//	}
+		//	 How strong are they compared to us?
+			switch (GetPlayer()->GetDiplomacyAI()->GetPlayerMilitaryStrengthComparedToUs(eOtherPlayer))
+			{
+			case STRENGTH_PATHETIC:
+				iItemValue = 10;
+				break;
+			case STRENGTH_WEAK:
+				iItemValue = 40;
+				break;
+			case STRENGTH_POOR:
+				iItemValue = 70;
+				break;
+			case STRENGTH_AVERAGE:
+				iItemValue = 100;
+				break;
+			case STRENGTH_STRONG:
+				iItemValue = 130;
+				break;
+			case STRENGTH_POWERFUL:
+				iItemValue = 150;
+				break;
+			case STRENGTH_IMMENSE:
+				iItemValue = 200;
+				break;
+			default:
+				CvAssertMsg(false, "DEAL_AI: AI player has no valid MilitaryStrengthComparedToUs for Defensive Pact valuation.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.")
+				iItemValue = 100;
+				break;
+			}
 	}
 	// How much do we value giving away a Defensive Pact?
 	else
@@ -1726,22 +1729,22 @@ int CvDealAI::GetDefensivePactValue(bool bFromMe, PlayerTypes eOtherPlayer, bool
 		switch(GetPlayer()->GetDiplomacyAI()->GetMajorCivOpinion(eOtherPlayer))
 		{
 		case MAJOR_CIV_OPINION_ALLY:
-			iItemValue = 100;
+			iItemValue = 50;
 			break;
 		case MAJOR_CIV_OPINION_FRIEND:
 			iItemValue = 100;
 			break;
 		case MAJOR_CIV_OPINION_FAVORABLE:
-			iItemValue = 100;
+			iItemValue = 200;
 			break;
 		case MAJOR_CIV_OPINION_NEUTRAL:
-			iItemValue = 100000;
+			iItemValue = 500;
 			break;
 		case MAJOR_CIV_OPINION_COMPETITOR:
-			iItemValue = 100000;
+			iItemValue = 1500;
 			break;
 		case MAJOR_CIV_OPINION_ENEMY:
-			iItemValue = 100000;
+			iItemValue = 10000;
 			break;
 		case MAJOR_CIV_OPINION_UNFORGIVABLE:
 			iItemValue = 100000;
@@ -1753,31 +1756,37 @@ int CvDealAI::GetDefensivePactValue(bool bFromMe, PlayerTypes eOtherPlayer, bool
 		}
 
 		// Approach is important
-		//switch (GetPlayer()->GetDiplomacyAI()->GetMajorCivApproach(eOtherPlayer, /*bHideTrueFeelings*/ true))
-		//{
-		//case MAJOR_CIV_APPROACH_HOSTILE:
-		//	iItemValue *= 200;	// Value should already be increased above by Opinion as well
-		//	break;
-		//case MAJOR_CIV_APPROACH_GUARDED:
-		//	iItemValue *= 100;	// If we're guarded against someone, getting a Defensive Pact is kinda nice
-		//	break;
-		//case MAJOR_CIV_APPROACH_AFRAID:
-		//	iItemValue *= 80;		// If we're afraid of eOtherPlayer, we couldn't be happier to sign a Defensive Pact with them!
-		//	break;
-		//case MAJOR_CIV_APPROACH_FRIENDLY:
-		//	iItemValue *= 100;
-		//	break;
-		//case MAJOR_CIV_APPROACH_NEUTRAL:
-		//	iItemValue *= 100;
-		//	break;
-		//default:
-		//	CvAssertMsg(false, "DEAL_AI: AI player has no valid Approach for Defensive Pact valuation.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.")
-		//	iItemValue *= 100;
-		//	break;
-		//}
-		//iItemValue /= 100;
+		switch (GetPlayer()->GetDiplomacyAI()->GetMajorCivApproach(eOtherPlayer, /*bHideTrueFeelings*/ true))
+		{
+		case MAJOR_CIV_APPROACH_HOSTILE:
+			iItemValue *= 200;	 //Value should already be increased above by Opinion as well
+			break;
+		case MAJOR_CIV_APPROACH_GUARDED:
+			iItemValue *= 150;	 //If we're guarded against someone, getting a Defensive Pact is kinda nice
+			break;
+		case MAJOR_CIV_APPROACH_AFRAID:
+			iItemValue *= 80;		 //If we're afraid of eOtherPlayer, we couldn't be happier to sign a Defensive Pact with them!
+			break;
+		case MAJOR_CIV_APPROACH_FRIENDLY:
+			iItemValue *= 50;
+			break;
+		case MAJOR_CIV_APPROACH_NEUTRAL:
+			iItemValue *= 100;
+			break;
+		default:
+			CvAssertMsg(false, "DEAL_AI: AI player has no valid Approach for Defensive Pact valuation.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.")
+			iItemValue *= 100;
+			break;
+		}
+		iItemValue /= 100;
 	}
 
+	//If in Alliance, this always seems like a good idea
+	if(GET_TEAM(GetTeam()).IsHasAlliance(GET_PLAYER(eOtherPlayer).getTeam()))
+	{
+		iItemValue = 25;
+	}
+	
 	// Are we trying to find the middle point between what we think this item is worth and what another player thinks it's worth?
 	if(bUseEvenValue)
 	{
@@ -1787,6 +1796,65 @@ int CvDealAI::GetDefensivePactValue(bool bFromMe, PlayerTypes eOtherPlayer, bool
 	}
 
 	return iItemValue;
+}
+
+/// How much is an Alliance worth?
+int CvDealAI::GetAllianceValue(bool bFromMe, PlayerTypes eOtherPlayer, bool bUseEvenValue)
+{
+	CvAssertMsg(GetPlayer()->GetID() != eOtherPlayer, "DEAL_AI: Trying to check value of an Alliance with oneself.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.");
+
+	int iAllianceValue = 500;
+
+	switch(GetPlayer()->GetDiplomacyAI()->GetMajorCivOpinion(eOtherPlayer))
+	{
+	case MAJOR_CIV_OPINION_ALLY:
+		iAllianceValue = 25;
+		break;
+	case MAJOR_CIV_OPINION_FRIEND:
+		iAllianceValue = 250;
+		break;
+	case MAJOR_CIV_OPINION_FAVORABLE:
+		iAllianceValue = 500;
+		break;
+	case MAJOR_CIV_OPINION_NEUTRAL:
+		iAllianceValue = 1000;
+		break;
+	case MAJOR_CIV_OPINION_COMPETITOR:
+		iAllianceValue = 5000;
+		break;
+	case MAJOR_CIV_OPINION_ENEMY:
+		iAllianceValue = 10000;
+		break;
+	case MAJOR_CIV_OPINION_UNFORGIVABLE:
+		iAllianceValue = 100000;
+		break;
+	default:
+		CvAssertMsg(false, "DEAL_AI: AI player has no valid Opinion for Alliance modifier valuation.  Please send Jon this with your last 5 autosaves and what changelist # you're playing.")
+		iAllianceValue = 500;
+		break;
+	}
+
+	// Are we trying to find the middle point between what we think this item is worth and what another player thinks it's worth?
+	if(bUseEvenValue)
+	{
+		iAllianceValue += GET_PLAYER(eOtherPlayer).GetDealAI()->GetAllianceValue(!bFromMe, GetPlayer()->GetID(), /*bUseEvenValue*/ false);
+
+		iAllianceValue /= 2;
+	}
+
+	ICvEngineScriptSystem1* pkScriptSystem = gDLL->GetScriptSystem();
+	if (pkScriptSystem) 
+	{
+		CvLuaArgsHandle args;
+		args->Push(eOtherPlayer);
+		args->Push(GetPlayer()->GetID());
+		args->Push(iAllianceValue);
+
+		bool bResult;
+		LuaSupport::CallHook(pkScriptSystem, "CvDealAIGetAllianceValue", args.get(), bResult);
+	}
+
+	return iAllianceValue;
 }
 
 /// How much is a Research Agreement worth?

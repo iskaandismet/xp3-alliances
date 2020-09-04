@@ -59,6 +59,7 @@ void CvLuaDeal::PushMethods(lua_State* L, int t)
 	Method(AddAllowEmbassy);
 	Method(AddOpenBorders);
 	Method(AddDefensivePact);
+	Method(AddAlliance);
 	Method(AddResearchAgreement);
 	Method(AddTradeAgreement);
 	Method(AddPermamentAlliance);

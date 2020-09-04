@@ -594,17 +594,19 @@ public:
 	void DoOpenBordersExchange(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal);
 	void DoOpenBordersOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal);
 	void DoResearchAgreementOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal);
+	void DoDefensivePactOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal);
+	void DoAllianceOffer(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal);
 	void DoRenewExpiredDeal(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal);
 	//void DoResearchAgreementPlan(PlayerTypes ePlayer, DiploStatementTypes &eStatement);
 
 	void DoRequest(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal);
 	void DoGift(PlayerTypes ePlayer, DiploStatementTypes& eStatement, CvDeal* pDeal);
 
-	//void DoNowUnforgivableStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement);
-	//void DoNowEnemyStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement);
+	void DoNowUnforgivableStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement);
+	void DoNowEnemyStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement);
 
 	void DoHostileStatement(PlayerTypes ePlayer, DiploStatementTypes& eStatement);
-	//void DoFriendlyStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement);
+	void DoFriendlyStatement(PlayerTypes ePlayer, DiploStatementTypes &eStatement);
 	void DoAfraidStatement(PlayerTypes ePlayer, DiploStatementTypes& eStatement);
 	void DoWarmongerStatement(PlayerTypes ePlayer, DiploStatementTypes& eStatement);
 	void DoMinorCivCompetitionStatement(PlayerTypes ePlayer, DiploStatementTypes& eStatement, int& iData1, bool bIgnoreTurnsBetweenLimit = false);

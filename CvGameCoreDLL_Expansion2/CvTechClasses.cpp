@@ -1516,10 +1516,6 @@ void CvPlayerTechs::AddFlavorAsStrategies(int iPropagatePercent)
 			iBiggestFlavor = iFlavorValue;
 		}
 	}
-	if (iBiggestFlavor == 0)
-	{
-		iBiggestFlavor = 1;
-	}
 
 	// Now populate the AI with the current flavor information
 	int iGameProgressFactor = (GC.getGame().getElapsedGameTurns() * 1000) / GC.getGame().getDefaultEstimateEndTurn();

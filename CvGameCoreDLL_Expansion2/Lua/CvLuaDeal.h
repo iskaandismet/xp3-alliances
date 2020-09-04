@@ -140,6 +140,10 @@ protected:
 	{
 		return BasicLuaMethod(L, &CvDeal::AddDefensivePact);
 	};
+	static int lAddAlliance(lua_State* L)
+	{
+		return BasicLuaMethod(L, &CvDeal::AddAlliance);
+	};
 	static int lAddResearchAgreement(lua_State* L)
 	{
 		return BasicLuaMethod(L, &CvDeal::AddResearchAgreement);
